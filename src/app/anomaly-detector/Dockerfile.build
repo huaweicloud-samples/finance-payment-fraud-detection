@@ -1,0 +1,11 @@
+# 临时构建文件(部署验证用), 不改原 Dockerfile。
+# 主 pip 源指向华为云镜像(用户机器可达); torch CPU wheel 仍走 requirements.txt 里的官方 CPU 源(已验证可达)。
+FROM python:3.10
+
+WORKDIR /usr/src/app
+
+COPY anomaly_detector.py embeddings_loader.py download_embeddings.py requirements.txt ./
+
+RUN pip install -r requirements.txt --no-cache-dir -i https://pypi.org/simple
+
+CMD [ "python3", "-u", "anomaly_detector.py" ]

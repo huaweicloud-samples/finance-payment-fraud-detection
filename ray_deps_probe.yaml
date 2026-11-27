@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ray-deps-probe
+  namespace: spf-app
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: 10.0.1.21
+  tolerations:
+    - key: node.kubernetes.io/route-unreachable
+      operator: Exists
+      effect: NoSchedule
+  imagePullSecrets:
+    - name: default-secret
+  restartPolicy: Never
+  containers:
+    - name: probe
+      image: swr.cn-north-4.myhuaweicloud.com/ray-cce/ray:2.42.1-py310-gpu
+      terminationMessagePath: /tmp/term.log
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          echo 'IyEvYmluL3NoCnsKICBlY2hvICc9PT0gYW5vbWFseSBkZXBzID09PScKICBweXRob24zIC1jICJpbXBvcnQgaW1wb3J0bGliCm1vZHMgPSBbJ3RvcmNoJywndHJhbnNmb3JtZXJzJywnc2VudGVuY2VfdHJhbnNmb3JtZXJzJywncGFuZGFzJywnbnVtcHknLCdza2xlYXJuJywncHN5Y29wZycsJ3BzeWNvcGcyJywncGd2ZWN0b3InLCdrdWJlcm5ldGVzJywnb2JzJywncmVxdWVzdHMnLCdkb3RlbnYnLCdkYXRldXRpbCddCmZvciBtIGluIG1vZHM6CiAgICB0cnk6CiAgICAgICAgbW9kID0gaW1wb3J0bGliLmltcG9ydF9tb2R1bGUobSkKICAgICAgICBwcmludCgnT0snLCBtLCBnZXRhdHRyKG1vZCwgJ19fdmVyc2lvbl9fJywgJz8nKSkKICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgcHJpbnQoJ01JU1MnLCBtKQoiIDI+JjE7CiAgZWNobyAnPT09IEROUyA9PT0nCiAgcHl0aG9uMyAtYyAiaW1wb3J0IHNvY2tldDsgcHJpbnQoJ29iczonLCBzb2NrZXQuZ2V0aG9zdGJ5bmFtZSgnb2JzLmNuLW5vcnRoLTQubXlodWF3ZWljbG91ZC5jb20nKSkiIDI+JjE7CiAgcHl0aG9uMyAtYyAiaW1wb3J0IHNvY2tldDsgcHJpbnQoJ3N3cjonLCBzb2NrZXQuZ2V0aG9zdGJ5bmFtZSgnc3dyLmNuLW5vcnRoLTQubXlodWF3ZWljbG91ZC5jb20nKSkiIDI+JjE7CiAgZWNobyAnPT09IGphdmEgPT09JwogIHdoaWNoIGphdmEgMj4mMQp9ID4gL3RtcC90ZXJtLmxvZyAyPiYxCg==' | base64 -d > /tmp/probe.sh
+          chmod +x /tmp/probe.sh
+          sh /tmp/probe.sh
