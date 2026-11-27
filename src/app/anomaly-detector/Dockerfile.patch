@@ -1,0 +1,9 @@
+# 临时补丁镜像: 基于已含全部依赖的旧镜像, 替换代码 + 内置 HF 模型(离线可用)
+FROM anomaly-detector:base
+COPY hf-models/ /models/
+COPY anomaly_detector.py /usr/src/app/anomaly_detector.py
+ENV HF_HOME=/models \
+    HF_HUB_OFFLINE=1 \
+    SENTENCE_TRANSFORMERS_HOME=/models \
+    TRANSFORMERS_CACHE=/models \
+    HF_ENDPOINT=https://hf-mirror.com

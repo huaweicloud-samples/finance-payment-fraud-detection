@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: spf-app
+  name: data-collector-sa
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: spf-app
+  name: data-collector-config
+data:
+  file_data_extract_folder_in_obs: "file_extract"
+  file_line_number_to_read_from: "1"
+  files_location_in_obs: "raw_payment_request_files"
+  max_lines_to_read: "5000"
+  payment_data: "transaction_data_100K_full.csv"
+  region: "cn-north-4"
+  obs_bucket: "spf-runtime-cn-north-4-gtdgcmy"
+  collector_folder: "data-collector"
+  state_filename: "collector-state.txt"
+  test_mode: "true"
+  obs_endpoint: "https://obs.cn-north-4.myhuaweicloud.com"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  namespace: spf-app
+  name: data-collector
+  labels:
+    app: data-collector-app
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            job: data-collector-job
+        spec:
+          tolerations:
+            - key: node.kubernetes.io/route-unreachable
+              operator: Exists
+              effect: NoSchedule
+          serviceAccountName: data-collector-sa
+          imagePullSecrets:
+            - name: default-secret
+          containers:
+            - name: data-collector-app
+              image: swr.cn-north-4.myhuaweicloud.com/spf/data-collector:latest
+              command: ["java"]
+              args: ["-jar", "/app/runner.jar"]
+              env:
+                - name: FILE_DATA_EXTRACT_FOLDER_IN_OBS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: file_data_extract_folder_in_obs
+                - name: FILE_LINE_NUMBER_TO_READ_FROM
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: file_line_number_to_read_from
+                - name: FILES_LOCATION_IN_OBS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: files_location_in_obs
+                - name: MAX_LINES_TO_READ
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: max_lines_to_read
+                - name: PAYMENT_DATA_FILE
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: payment_data
+                - name: REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: region
+                - name: OBS_BUCKET
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: obs_bucket
+                - name: COLLECTOR_FOLDER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: collector_folder
+                - name: COLLECTOR_STATE
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: state_filename
+                - name: TEST_MODE
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: test_mode
+                - name: OBS_ENDPOINT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: data-collector-config
+                      key: obs_endpoint
+                - name: OBS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: obs-creds
+                      key: access_key
+                      optional: true
+                - name: OBS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: obs-creds
+                      key: secret_key
+                      optional: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 1
+                  memory: 1Gi
+          restartPolicy: OnFailure

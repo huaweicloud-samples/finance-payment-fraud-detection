@@ -1,0 +1,18 @@
+# Terraform 变量示例文件
+# 复制为 terraform.tfvars 并按实际环境填写（凭据一律不写入本文件，走环境变量）
+
+region = "cn-north-4"
+project_name = "spf"
+cluster_name = "spf-cce-cluster"
+node_flavor = "c7.large.2"
+node_count = 2
+obs_bucket_name = "spf-runtime-cn-north-4-<gid>"   # 替换为全局唯一桶名
+docker_registry = "swr.cn-north-4.myhuaweicloud.com"
+swr_organization = "spf"
+
+# 节点认证：public_key 与 node_password 二选一（建议公钥）
+# public_key = "ssh-rsa AAAA..."
+# node_password = ""
+
+# NAT 网关（公网出网）：仅当 Pod 需访问公网第三方 API 时启用
+# nat_enabled = true

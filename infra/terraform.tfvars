@@ -1,0 +1,9 @@
+region = "cn-north-4"
+project_name = "spf"
+cluster_name = "spf-cce-cluster"
+node_flavor = "c7.large.2"
+node_count = 2
+obs_bucket_name = "spf-runtime-cn-north-4-gtdgcmy"
+swr_organization = "spf"
+nat_enabled = false
+public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIELurbjjBulr4KHn5jjUPD0NBiQswYK2zn3howHYtDyt spf-cce-nodes"

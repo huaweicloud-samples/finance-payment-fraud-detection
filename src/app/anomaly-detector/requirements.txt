@@ -1,0 +1,20 @@
+# CPU 版 PyTorch（推理只需 CPU，避免默认安装带 CUDA 的 ~2GB+ 依赖）
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.1
+
+requests==2.32.3
+numpy==2.1.2
+esdk-obs-python==3.25.8
+psycopg==3.2.3
+psycopg-binary==3.2.3
+psycopg-pool==3.2.3
+python-dateutil==2.9.0.post0
+six==1.16.0
+urllib3==2.2.3
+pandas==2.2.3
+scikit-learn==1.5.2
+transformers==4.45.2
+python-dotenv==1.0.1
+sentence-transformers==3.1.1
+pgvector==0.3.5
+kubernetes==31.0.0

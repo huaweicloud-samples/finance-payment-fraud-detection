@@ -1,0 +1,124 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spf-anomaly-detector-role
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "configmaps", "serviceaccounts"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: spf-app
+  name: anomaly-detector-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: spf-anomaly-detector-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: spf-anomaly-detector-role
+subjects:
+  - kind: ServiceAccount
+    namespace: spf-app
+    name: anomaly-detector-sa
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: spf-app
+  name: anomaly-detector-config
+data:
+  DBHOST: "postgres.postgres.spf-app.svc.cluster.local"
+  DBNAME: "payments"
+  DBUSER: "spfuser"
+  DBPASS: "c3LQpc6V3z3zXLMgsMNtfqG7"
+  DBPORT: "5432"
+  SERVICE_PORT: "5432"
+  SERVICE_NAME: "postgres"
+  NAMESPACE: "spf-app"
+  REGION: "cn-north-4"
+  OBS_BUCKET_NAME: "spf-runtime-cn-north-4-gtdgcmy"
+  OBS_PATH_INPUT: "data-collector/"
+  OBS_PATH_OUTPUT: "anomaly-detector/"
+  DATASET: "./data/transaction_data_100K_full.csv"
+  OBS_ENDPOINT: "https://obs.cn-north-4.myhuaweicloud.com"
+  OBS_EMBEDDINGS_PREFIX: "embeddings/"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: spf-app
+  name: anomaly-detector
+spec:
+  selector:
+    matchLabels:
+      app: anomaly-detector-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: anomaly-detector-app
+    spec:
+      tolerations:
+        - key: node.kubernetes.io/route-unreachable
+          operator: Exists
+          effect: NoSchedule
+
+      imagePullSecrets:
+        - name: default-secret
+
+      serviceAccountName: anomaly-detector-sa
+      containers:
+        - name: anomaly-detector-app
+          image: swr.cn-north-4.myhuaweicloud.com/spf/anomaly-detector:latest
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: "500m"
+              memory: 1Gi
+          envFrom:
+            - configMapRef:
+                name: anomaly-detector-config
+          env:
+            - name: OBS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: obs-creds
+                  key: access_key
+                  optional: true
+            - name: OBS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: obs-creds
+                  key: secret_key
+                  optional: true
+      initContainers:
+        - name: anomaly-detector-init
+          image: swr.cn-north-4.myhuaweicloud.com/spf/anomaly-detector:latest
+          command: ["sh", "-c"]
+          args:
+            - >
+              python3 -u download_embeddings.py &&
+              python3 -u embeddings_loader.py
+          envFrom:
+            - configMapRef:
+                name: anomaly-detector-config
+          env:
+            - name: OBS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: obs-creds
+                  key: access_key
+                  optional: true
+            - name: OBS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: obs-creds
+                  key: secret_key
+                  optional: true
